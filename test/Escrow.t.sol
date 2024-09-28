@@ -23,27 +23,17 @@ contract EscrowTest is Test {
 
     function setUp() public {
         escrow = new Escrow();
-        token = new TestToken(120);
+        token = new TestToken(120e18);
 
         vm.deal(buyer, 15 ether);
-        IERC20(token).transfer(buyer, 20);
+        IERC20(token).transfer(buyer, 20e18);
 
         vm.prank(buyer);
-        escrow.createEscrow{value: depositAmount}(
-            seller,
-            arbitrator,
-            address(0),
-            0
-        );
+        escrow.createEscrow{value: depositAmount}(seller, arbitrator, address(0), 0);
     }
 
     function testCreateEscrow() public runAsBuyer {
-        escrow.createEscrow{value: depositAmount}(
-            seller,
-            arbitrator,
-            address(0),
-            0
-        );
+        escrow.createEscrow{value: depositAmount}(seller, arbitrator, address(0), 0);
 
         (
             address _buyer,
@@ -69,11 +59,11 @@ contract EscrowTest is Test {
     }
 
     function testCreateEscrowWithERC20Token() public runAsBuyer {
-        IERC20(token).approve(address(escrow), 10);
-        escrow.createEscrow(seller, arbitrator, address(token), 10);
+        IERC20(token).approve(address(escrow), 1e18);
+        escrow.createEscrow(seller, arbitrator, address(token), 1e18);
 
         uint256 balance = token.balanceOf(address(escrow));
-        assertEq(balance, 10);
+        assertEq(balance, 1e18);
     }
 
     function testConfirmDelivery_TransactionNotFound() public {
@@ -83,10 +73,7 @@ contract EscrowTest is Test {
         escrow.confirmDelivery(invalidTransactionId);
     }
 
-    function testConfirmDelivery_TransactionAlreadyDelivered()
-        public
-        runAsBuyer
-    {
+    function testConfirmDelivery_TransactionAlreadyDelivered() public runAsBuyer {
         escrow.confirmDelivery(transactionId);
 
         vm.expectRevert(Escrow.InvalidTransactionState.selector);
@@ -165,13 +152,7 @@ contract EscrowTest is Test {
 
         vm.warp(block.timestamp + 12 hours);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Escrow.WithdrawalBeforeExpiry.selector,
-                block.timestamp,
-                expirationTime
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Escrow.WithdrawalBeforeExpiry.selector, block.timestamp, expirationTime));
 
         escrow.withdrawAfterExpiry(transactionId);
     }

@@ -3,7 +3,9 @@
   "solidity.packageDefaultDependenciesDirectory": "lib",
   "editor.formatOnSave": true,
   "[solidity]": {
-    "editor.defaultFormatter": "JuanBlanco.solidity"
+    "editor.defaultFormatter": "JuanBlanco.solidity",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
   },
   "solidity.formatter": "forge",
   "solidity.compileUsingRemoteVersion": "v0.8.17",
