@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-contract Escrow {
+import "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
+contract Escrow is ReentrancyGuard {
     enum EscrowState {
         AWAITING_PAYMENT,
         PENDING,
@@ -13,8 +16,9 @@ contract Escrow {
         address buyer;
         address seller;
         address arbitrator;
-        uint amount;
+        uint256 amount;
         uint8 state;
+        address token; // Address of ERC20 token or address(0) for Ether
     }
 
     mapping(uint => Transaction) public transactions;
@@ -39,7 +43,7 @@ contract Escrow {
     error CannotRaiseDispute();
     error CannotResolveDispute();
     error InvalidTransactionState();
-	error SendingFundsFailed();
+    error SendingFundsFailed();
     error NotArbitrator();
     error NotTheOwner();
 
@@ -57,10 +61,20 @@ contract Escrow {
         _;
     }
 
-    function createEscrow(address _seller, address _arbitrator) public payable {
-        if (msg.value == 0) revert DepositAmountZero();
-
+    function createEscrow(
+        address _seller,
+        address _arbitrator,
+        address _token,
+        uint256 _amount
+    ) public payable {
         transactionCounter++;
+
+        if (_token == address(0) && msg.value == 0) {
+            revert DepositAmountZero();
+        } else {
+            IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+        }
+
         feeAmount += calculateFee(msg.value);
 
         transactions[transactionCounter] = Transaction(
@@ -68,7 +82,8 @@ contract Escrow {
             _seller,
             _arbitrator,
             msg.value,
-            uint8(EscrowState.PENDING)
+            uint8(EscrowState.PENDING),
+            _token
         );
 
         emit EscrowCreated(
@@ -115,7 +130,7 @@ contract Escrow {
         }
     }
 
-    function withdraw() public onlyOwner {
+    function withdraw() public onlyOwner nonReentrant {
         uint256 withdrawAmount = feeAmount;
         feeAmount = 0;
 

@@ -23,20 +23,31 @@ contract EscrowTest is Test {
         vm.deal(buyer, 15 ether);
 
         vm.prank(buyer);
-        escrow.createEscrow{value: depositAmount}(seller, arbitrator);
+        escrow.createEscrow{value: depositAmount}(
+            seller,
+            arbitrator,
+            address(0),
+            0
+        );
     }
 
     function testCreateEscrow() public {
         vm.prank(buyer);
 
-        escrow.createEscrow{value: depositAmount}(seller, arbitrator);
+        escrow.createEscrow{value: depositAmount}(
+            seller,
+            arbitrator,
+            address(0),
+            0
+        );
 
         (
             address _buyer,
             address _seller,
             address _arbitrator,
             uint256 _amount,
-            uint8 _state
+            uint8 _state,
+            address _token
         ) = escrow.transactions(1);
 
         assertEq(_buyer, buyer);
@@ -44,13 +55,19 @@ contract EscrowTest is Test {
         assertEq(_arbitrator, arbitrator);
         assertEq(_amount, depositAmount);
         assertEq(_state, uint8(Escrow.EscrowState.PENDING));
+        assertEq(_token, address(0));
     }
 
     function testCreateEscrowRevertsWithoutPayment() public {
         vm.prank(buyer);
 
         vm.expectRevert(Escrow.DepositAmountZero.selector);
-        escrow.createEscrow(seller, arbitrator);
+        escrow.createEscrow{value: depositAmount}(
+            seller,
+            arbitrator,
+            address(0),
+            0
+        );
     }
 
     function testConfirmDelivery_TransactionNotFound() public {
