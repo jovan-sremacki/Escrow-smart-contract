@@ -27,9 +27,9 @@ contract Escrow is ReentrancyGuard {
     mapping(uint256 => Transaction) public transactions;
     mapping(address => mapping(uint256 => bool)) public deliveryConfirmed;
 
-    uint256 feePercentage = 100;
+    uint256 public immutable feePercentage = 100;
     uint256 public transactionCounter;
-    uint256 public feeAmount;
+    uint256 public etherFeeAmount;
 
     error NotTheSeller();
     error NotTheArbitrator();
@@ -57,11 +57,11 @@ contract Escrow is ReentrancyGuard {
         if (_token == address(0)) {
             if (msg.value == 0) revert DepositAmountZero();
             _amount = msg.value;
+            etherFeeAmount += _calculateFee(_amount);
         } else {
             _sendFunds(address(this), _amount, _token);
+            tokenFeeAmounts[_token] += _calculateFee(_amount);
         }
-
-        feeAmount += _calculateFee(_amount);
 
         transactions[transactionCounter] = Transaction(
             msg.sender, _seller, _arbitrator, _amount, uint8(EscrowState.PENDING), _token, block.timestamp + 7 days

@@ -51,6 +51,7 @@ contract EscrowTest is Test {
         assertEq(_amount, depositAmount);
         assertEq(_state, uint8(Escrow.EscrowState.PENDING));
         assertEq(_token, address(0));
+        assertEq(escrow.etherFeeAmount(), 2e16);
     }
 
     function testCreateEscrowRevertsWithoutPayment() public runAsBuyer {
@@ -64,6 +65,7 @@ contract EscrowTest is Test {
 
         uint256 balance = token.balanceOf(address(escrow));
         assertEq(balance, 1e18);
+        assertEq(escrow.tokenFeeAmounts(address(token)), 1e16); // check the fee amount
     }
 
     function testConfirmDelivery_TransactionNotFound() public {
@@ -137,7 +139,7 @@ contract EscrowTest is Test {
     function testFeePercentageAfterConfirmDelivery() public runAsBuyer {
         escrow.confirmDelivery(transactionId);
 
-        assertEq(escrow.feeAmount(), 0.01 ether);
+        assertEq(escrow.etherFeeAmount(), 0.01 ether);
     }
 
     function testWithdrawAfterExpiry_NotTheSeller() public {
